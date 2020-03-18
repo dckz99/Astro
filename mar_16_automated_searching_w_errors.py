@@ -212,7 +212,7 @@ def auto_search(csv_name, tlp, brp, border, loc_back_radius, max_radius,
         "growth_std_multiplier" : growth_std_multiplier}
 
     #first line of txt describe the galaxy search next line is column headings
-    head_str = "name\tg_x\tg_y\tradius\tmagnitude\terror"
+    head_str = "name\tg_x\tg_y\tradius\tmag\terror"
     print(head_str)
 
     with fits.open("A1_mosaic.fits") as file: #read in data
@@ -232,6 +232,7 @@ def auto_search(csv_name, tlp, brp, border, loc_back_radius, max_radius,
 
     num_found = 0
     all_data = []
+    data_str = ""
     while True:
         #get centre point of new galaxy by finding brighest pixl in interior box
         max_flux = np.max(interior_box)
@@ -250,7 +251,10 @@ def auto_search(csv_name, tlp, brp, border, loc_back_radius, max_radius,
                 interior_box[max_point_y-border, max_point_x-border] = 1
                 # print(" \t{}\t{}\t".format(*galatic_centre))
                 if max_flux < back_mean + back_std*selection_std_multiplier/2:
-                    break #stop searching
+                    try:
+                        print(data_str[:-1])
+                    finally:
+                        break #stop searching
                 continue
 
             #expand circular apature upto threshold
@@ -301,9 +305,11 @@ def auto_search(csv_name, tlp, brp, border, loc_back_radius, max_radius,
                 back_mean,back_std]]
 
             #add data to string line for output
-            data_str = "{}\t{}\t{}\t{}\t{:.7e}\t{:.7e}"\
+            data_str = data_str + "{}\t{}\t{}\t{}\t{:.3f}\t{:.3f}\n"\
                 .format(num_found,*galatic_centre, radius, cal_mag, cal_mag_e)
-            print(data_str)
+
+            if num_found%100 == 0:
+                print(data_str[:-1])
 
             num_found += 1
 

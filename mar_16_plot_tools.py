@@ -225,9 +225,9 @@ def plot_catalogue(catalogue_csv):
     # axis.errorbar(mag_limits, log_N, yerr= log_N_e,
     #     fmt = "none", color = "skyblue", alpha = 0.5)
     axis.fill_betweenx(log_N, x1 = magnitudes-magnitudes_e,
-        x2 = magnitudes+magnitudes_e, color = "skyblue", alpha = 0.7, 
+        x2 = magnitudes+magnitudes_e, color = "skyblue", alpha = 0.7,
         label = "Magnitude Error")
-    axis.plot(magnitudes, log_N, "k", alpha=0.5)
+    axis.plot(magnitudes, log_N, "k")
 
     def linear(x, gradient, intercept):
         return x*gradient + intercept
@@ -240,6 +240,6 @@ def plot_catalogue(catalogue_csv):
     axis.set_xlabel("Calibrated Galaxy Magnitude")
     axis.set_ylabel("log$_{10}$[N(<m)]")
     axis.set_xlim(np.min(magnitudes), np.max(magnitudes))
-    axis.set_ylim(np.min(log_N), np.max(log_N)+0.01)
+    axis.set_ylim(np.min(log_N), np.max(log_N)+0.03)
     axis.legend()
     plt.show()
