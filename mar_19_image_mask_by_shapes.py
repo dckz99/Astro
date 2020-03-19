@@ -384,4 +384,4 @@ def noise_patch(graphs = False):
     return data
 
 if __name__ == "__main__":
-    noise_patch()
+    noise_patch(graphs = True)

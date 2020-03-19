@@ -5,7 +5,7 @@ from lmfit import Model
 import numpy as np
 import numpy.random as npran
 
-from mar_16_plot_tools import *
+from mar_19_plot_tools import *
 from mar_19_image_mask_by_shapes import noise_patch
 
 
@@ -209,7 +209,7 @@ def expand_apature_to_threshold(data_map, galatic_centre, back_mean, back_std,
 
 def auto_search(csv_name, border, loc_back_radius, max_radius,
     selection_std_multiplier, growth_std_multiplier, limit = None,
-    initial_plot = False, final_plot = False, individual_plots = False):
+    initial_plot = False, individual_plots = False):
     """
     Find new galaxies by selecting the brightest pixel in the image and then
     expanding a circular aperture to encompass the whole galaxy.
@@ -309,17 +309,21 @@ def auto_search(csv_name, border, loc_back_radius, max_radius,
             cal_mag = zero_point - 2.5*np.log10(corrected_flux)
             cal_mag_e = (2.5/np.log(10))*corrected_flux_e/corrected_flux
 
-            all_data += [[num_found,galatic_centre[0],galatic_centre[1],cal_mag,
+            flipped_y = data_map.shape[0] - galatic_centre[1]
+
+            all_data += [[num_found,galatic_centre[0],flipped_y,cal_mag,
                 cal_mag_e,radius,final_area,final_flux,back_removal_e,
                 expected_count_e,cutoff_correction,cutoff_correction_e,
                 back_mean,back_std]]
 
             #add data to string line for output
             data_str = data_str + "{}\t{}\t{}\t{}\t{:.3f}\t{:.3f}\n"\
-                .format(num_found,*galatic_centre, radius, cal_mag, cal_mag_e)
+                .format(num_found,galatic_centre[0],flipped_y, radius, cal_mag,
+                cal_mag_e)
 
             if num_found%100 == 0:
                 print(data_str[:-1])
+                data_str = ""
 
             num_found += 1
 
@@ -344,10 +348,6 @@ def auto_search(csv_name, border, loc_back_radius, max_radius,
 
     print("\n{} Galaxies Found".format(num_found))
 
-    #show result of search
-    if final_plot:
-        plot_auto_search_result(csv_name)
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if __name__ == "__main__":
@@ -368,7 +368,7 @@ if __name__ == "__main__":
         "selection_std_multiplier" : 4,
         "growth_std_multiplier" : 4}
 
-    # auto_search("mar_16_data.csv", **search_params, final_plot = True,
-    #     individual_plots = False, initial_plot = False)
-
-    plot_catalogue("mar_16_data.csv")
+    auto_search("mar_16_data.csv", **search_params,
+        individual_plots = False, initial_plot = True)
+    plot_catalogue_position("mar_16_data.csv")
+    plot_catalogue_result("mar_16_data.csv")
