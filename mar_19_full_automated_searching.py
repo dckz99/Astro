@@ -6,6 +6,7 @@ import numpy as np
 import numpy.random as npran
 
 from mar_16_plot_tools import *
+from mar_19_image_mask_by_shapes import noise_patch
 
 
 def central_displacement_map(max_radius):
@@ -46,24 +47,41 @@ def local_background(data_map, galatic_centre, loc_back_radius):
     max_count_index = np.where(bin_heights == max_count)[0][0]
     #pick out heighest bin and find the relevant index in fluxs
     #in most cases this bin will be part of the noise
+    try:
+        assert 3300 < fluxs[max_count_index] < 3500
+    except:
+        print(fluxs[max_count_index])
+        raise
 
-    assert 3390 < fluxs[max_count_index] < 3450
-
-    #background is chacacterised by finding the FWHM of the data
-    offsets = []
-    for direction in [-1, +1]: #walks in different directions
-        search = max_count
-        offset = 0
-        while search > max_count/2: #find half maxima
-            offset += 1
-            search = bin_heights[max_count_index + offset*direction]
-        offsets += [offset]
-    #flux values have integer spacing -> index diffence = flux difference
-    FWHM_gauss_std = (offsets[0] + offsets[1]) / 2.355
-    local_peak_index=(max_count_index-offsets[0]*2,max_count_index+offsets[1]*2)
-    FWHM_gauss_mean = np.average(fluxs[local_peak_index[0]:local_peak_index[1]],
-        weights = bin_heights[local_peak_index[0]:local_peak_index[1]])
-    #find mean of gaussian by averaging histogram bars in area around peak
+    try:
+        #background is chacacterised by finding the FWHM of the data
+        offsets = []
+        for direction in [-1, +1]: #walks in different directions
+            search = max_count
+            offset = 0
+            while search > max_count/2: #find half maxima
+                offset += 1
+                search = bin_heights[max_count_index + offset*direction]
+            offsets += [offset]
+        #flux values have integer spacing -> index diffence = flux difference
+        FWHM_gauss_std = (offsets[0] + offsets[1]) / 2.355
+        if max_count_index-offsets[0]*2 >= 0:
+            local_peak_index=(max_count_index-offsets[0]*2,
+                max_count_index+offsets[1]*2)
+        else:
+            local_peak_index=(0, max_count_index+offsets[1]*2)
+        FWHM_gauss_mean =\
+            np.average(fluxs[local_peak_index[0]:local_peak_index[1]],
+            weights = bin_heights[local_peak_index[0]:local_peak_index[1]])
+        #find mean of gaussian by averaging histogram bars in area around peak
+    except:
+        print(FWHM_gauss_std)
+        print(local_peak_index)
+        print(offsets[0], offsets[1])
+        print(bin_heights[local_peak_index[0]:local_peak_index[1]])
+        plt.hist(flat_local_space, bins = range)
+        plt.show()
+        raise
 
     return FWHM_gauss_mean, FWHM_gauss_std
 
@@ -189,7 +207,7 @@ def expand_apature_to_threshold(data_map, galatic_centre, back_mean, back_std,
     return radius, final_flux, final_area, mask, error_data
 
 
-def auto_search(csv_name, tlp, brp, border, loc_back_radius, max_radius,
+def auto_search(csv_name, border, loc_back_radius, max_radius,
     selection_std_multiplier, growth_std_multiplier, limit = None,
     initial_plot = False, final_plot = False, individual_plots = False):
     """
@@ -203,32 +221,24 @@ def auto_search(csv_name, tlp, brp, border, loc_back_radius, max_radius,
     assert border >= max_radius
 
     search_params = {
-        "tlp" : tlp,
-        "brp" : brp,
         "border" : border,
         "loc_back_radius" : loc_back_radius,
         "max_radius" : max_radius,
         "selection_std_multiplier" : selection_std_multiplier,
         "growth_std_multiplier" : growth_std_multiplier}
 
-    #first line of txt describe the galaxy search next line is column headings
-    head_str = "name\tg_x\tg_y\tradius\tmag\terror"
-    print(head_str)
-
     with fits.open("A1_mosaic.fits") as file: #read in data
         header = file[0].header
         zero_point = header["MAGZPT"]
-        #full data map
-        data_map = np.flip(file[0].data[brp[1]:tlp[1],tlp[0]:brp[0]], axis = 0)
-        #slice out box from data_map, excluding borders
-        interior_box = copy(data_map[border:-border, border:-border])
-        gb_min = np.min(data_map)
+
+    data_map = noise_patch(graphs = initial_plot)
+    interior_box = copy(data_map[border:-border, border:-border])
 
     #create displacement map
     central_displacement_master = central_displacement_map(max_radius)
 
-    if initial_plot: #plot data, pre analysis
-        plot_image(data_map)
+    #first line of txt describe the galaxy search next line is column headings
+    print("name\tg_x\tg_y\tradius\tmag\terror")
 
     num_found = 0
     all_data = []
@@ -349,18 +359,16 @@ if __name__ == "__main__":
     #     "max_radius" : 30,
     #     "selection_std_multiplier" : 4,
     #     "growth_std_multiplier" : 2}
-    tlp = (1508, 2256)
-    brp = (2261, 1500)
     # tlp = (1900, 2295)
     # brp = (2261, 2000)
     search_params = {
-        "border" : 50,
-        "loc_back_radius" : 50,
-        "max_radius" : 30,
+        "border" : 100,
+        "loc_back_radius" : 100,
+        "max_radius" : 60,
         "selection_std_multiplier" : 4,
         "growth_std_multiplier" : 4}
 
-    auto_search("mar_16_data.csv", tlp, brp, **search_params, final_plot = True,
-        individual_plots = False)
+    # auto_search("mar_16_data.csv", **search_params, final_plot = True,
+    #     individual_plots = False, initial_plot = False)
 
     plot_catalogue("mar_16_data.csv")

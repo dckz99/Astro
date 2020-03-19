@@ -23,7 +23,7 @@ def plot_image(data_map):
     """
     Show uneditted data.
     """
-    plt.imshow(np.log10(data_map), cmap = "nipy_spectral", vmax = 8.5)
+    plt.imshow(np.log10(data_map), cmap = "nipy_spectral", vmax = 3.7)
     cbar = plt.colorbar()
     cbar.set_label("log$_{10}$ Flux (Capped)", rotation=270, labelpad = 20)
     plt.xlabel("Image x (relative)")
@@ -80,7 +80,7 @@ def plot_auto_search_result(csv_name):
     axins = inset_axes(ax1, width="5%", height="100%", borderpad=0,\
         bbox_to_anchor=(0.1,0.,1,1), bbox_transform=ax1.transAxes)
     cbar = fig.colorbar(color_scale, cax = axins)
-    cbar.set_label("log$_{10}$ Flux (Capped)", rotation=270, labelpad = 20)
+    cbar.set_label("Flux (Capped)", rotation=270, labelpad = 20)
 
     custom_lines=[Line2D([0],[0],color="C3",lw=0, marker='o',fillstyle="none"),
                     Line2D([0], [0], color="k" , lw=2, ls="--")]
@@ -175,6 +175,7 @@ def plot_search_iteration(data_map, galatic_centre, radius, total_area,
     plt.subplots_adjust(hspace = 0.33, wspace = 0.31)
     plt.show()
 
+
 def plot_catalogue(catalogue_csv):
 
     plot_grad = 0.27
@@ -193,7 +194,6 @@ def plot_catalogue(catalogue_csv):
 
     magnitudes = stacked_data[:,0]
     magnitudes_e = stacked_data[:,1]
-
     # mag_limits = np.array([magnitudes[0]])
     N = np.array([1])
     for m in magnitudes[1:]:
@@ -202,6 +202,12 @@ def plot_catalogue(catalogue_csv):
     N_e = np.sqrt(N)
     log_N = np.log10(N)
     log_N_e = N_e /(np.log(10)*N)
+
+    weights = 1/np.sqrt((log_N_e/log_N)**2+(magnitudes_e/magnitudes)**2)
+    for i in range(len(magnitudes)):
+        if magnitudes[i] > 16.3:
+            weights[i] = 0
+
 
     fig, axis = plt.subplots(figsize = (7,5))
 
@@ -233,7 +239,7 @@ def plot_catalogue(catalogue_csv):
         return x*gradient + intercept
     lmodel = Model(linear)
     result = lmodel.fit(log_N, x=magnitudes, gradient=0.6, intercept=-2.5,
-        weights = magnitudes)
+        weights = weights)
     print(result.fit_report())
     axis.plot(magnitudes, result.best_fit, 'k--', label='Best Fit')
 
