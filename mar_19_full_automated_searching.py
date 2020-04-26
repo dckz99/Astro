@@ -368,7 +368,7 @@ if __name__ == "__main__":
         "selection_std_multiplier" : 4,
         "growth_std_multiplier" : 4}
 
-    auto_search("mar_16_data.csv", **search_params,
+    auto_search("mar_19_data.csv", **search_params,
         individual_plots = False, initial_plot = True)
-    plot_catalogue_position("mar_16_data.csv")
-    plot_catalogue_result("mar_16_data.csv")
+    plot_catalogue_position("mar_19_data.csv")
+    plot_catalogue_result("mar_19_data.csv")
